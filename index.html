@@ -2,148 +2,106 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
+  <title>Classifica Torneo Katan</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Classifica Torneo di Katan</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <style>
-    h2, h4 {
-      margin-top: 30px;
-      margin-bottom: 15px;
-    }
-    table {
-      max-width: 800px;
-      margin: auto;
-    }
-  </style>
 </head>
-<body class="bg-light p-3">
+<body class="bg-light p-4">
   <div class="container">
     <h2 class="text-center mb-4">Classifica Torneo di Katan</h2>
 
-    <!-- Form per inserire risultati -->
     <form id="resultForm" class="mb-4">
-      <div class="mb-2">
-        <input type="text" class="form-control" id="playerName" placeholder="Nome giocatore" required />
-      </div>
-      <div class="mb-2">
-        <input type="number" class="form-control" id="points" placeholder="Punti" required min="0" />
-      </div>
-      <div class="mb-2">
-        <input type="date" class="form-control" id="matchDate" required />
-      </div>
+      <input type="text" id="playerName" class="form-control mb-2" placeholder="Nome" required />
+      <input type="number" id="points" class="form-control mb-2" placeholder="Punti" required min="0" />
+      <input type="date" id="matchDate" class="form-control mb-2" required />
       <div class="form-check mb-3">
-        <input class="form-check-input" type="checkbox" id="victory" />
+        <input type="checkbox" id="victory" class="form-check-input" />
         <label class="form-check-label" for="victory">Vittoria</label>
       </div>
-      <button type="submit" class="btn btn-primary w-100">Inserisci Risultato</button>
+      <button class="btn btn-primary w-100">Invia risultato</button>
     </form>
 
-    <hr />
-
-    <!-- Classifica dettagliata -->
-    <div id="classifica">
-      <h4>Classifica Dettagliata</h4>
-      <p>Caricamento dati...</p>
-    </div>
-
-    <!-- Totali -->
-    <div id="totali">
-      <h4>Totali per Giocatore</h4>
-      <p>Caricamento dati...</p>
-    </div>
+    <div id="classifica"><p>Caricamento classifica...</p></div>
+    <div id="totali" class="mt-4"><p>Calcolo totali...</p></div>
   </div>
 
   <script>
-    const webAppUrl = 'https://script.google.com/macros/s/AKfycbzOMWW0JBhrr5FeRbOK6zWlzA70gB7OURrBoxEj5To2pXaDki0Jqy7qrcvc1gj709OtFg/exec'; // <--- SOSTITUISCI QUI
+    const webAppUrl = 'https://script.google.com/macros/s/AKfycbxJrSniGgbnCi-_-pIC5hrAx41ncm3qw9Z98MXBVW-1aQbNLtfriHBIpLkwSaqHDdhpDA/exec'; 
 
-    const sheetReadUrl = `https://sheets.googleapis.com/v4/spreadsheets/1G_nHw8XrB4N0yAA5QoOLSLuIzpmQ_isuaVA-7GrPLMU/values/TorneoKatan!A1:D150?key=AIzaSyATTZnPzPLGBi0kKbj0ZBCAWb-0n5l1pRo`;
+    const sheetReadUrl = 'https://sheets.googleapis.com/v4/spreadsheets/1G_nHw8XrB4N0yAA5QoOLSLuIzpmQ_isuaVA-7GrPLMU/values/TorneoKatan!A1:D150?key=AIzaSyATTZnPzPLGBi0kKbj0ZBCAWb-0n5l1pRo';
 
-    function loadData() {
-      fetch(sheetReadUrl)
-        .then(response => response.json())
-        .then(data => {
-          const rows = data.values;
-          if (rows && rows.length > 1) {
-            const header = rows[0];
-            const dataRows = rows.slice(1);
-
-            // Ordina per punti (colonna 2)
-            dataRows.sort((a, b) => (parseInt(b[1]) || 0) - (parseInt(a[1]) || 0));
-
-            let htmlClassifica = '<table class="table table-striped table-bordered"><thead><tr>';
-            header.forEach(cell => htmlClassifica += `<th>${cell}</th>`);
-            htmlClassifica += '</tr></thead><tbody>';
-            dataRows.forEach(row => {
-              htmlClassifica += '<tr>';
-              row.forEach(cell => htmlClassifica += `<td>${cell}</td>`);
-              htmlClassifica += '</tr>';
-            });
-            htmlClassifica += '</tbody></table>';
-            document.getElementById('classifica').innerHTML = '<h4>Classifica Dettagliata</h4>' + htmlClassifica;
-
-            // Totali per giocatore
-            const risultati = {};
-            dataRows.forEach(row => {
-              const nome = row[0];
-              const punti = parseInt(row[1]) || 0;
-              const vittoria = parseInt(row[2]) || 0;
-              if (!risultati[nome]) risultati[nome] = { punti: 0, vittorie: 0, partite: 0 };
-              risultati[nome].punti += punti;
-              risultati[nome].vittorie += vittoria;
-              risultati[nome].partite++;
-            });
-
-            let htmlTotali = '<table class="table table-striped table-bordered"><thead><tr><th>Giocatore</th><th>Punti Totali</th><th>Vittorie</th><th>Partite</th></tr></thead><tbody>';
-            for (const nome in risultati) {
-              const r = risultati[nome];
-              htmlTotali += `<tr><td>${nome}</td><td>${r.punti}</td><td>${r.vittorie}</td><td>${r.partite}</td></tr>`;
-            }
-            htmlTotali += '</tbody></table>';
-            document.getElementById('totali').innerHTML = '<h4>Totali per Giocatore</h4>' + htmlTotali;
-          }
-        })
-        .catch(err => {
-          console.error('Errore caricamento:', err);
-          document.getElementById('classifica').innerHTML = 'Errore nel caricamento dati';
-          document.getElementById('totali').innerHTML = '';
-        });
-    }
-
-    // Invia dati al Google Sheet
-    document.getElementById('resultForm').addEventListener('submit', function (e) {
+    document.getElementById('resultForm').addEventListener('submit', async function (e) {
       e.preventDefault();
+
       const nome = document.getElementById('playerName').value.trim();
       const punti = parseInt(document.getElementById('points').value);
       const data = document.getElementById('matchDate').value;
       const vittoria = document.getElementById('victory').checked ? 1 : 0;
 
-      if (!nome || isNaN(punti) || !data) {
-        alert('Compila tutti i campi correttamente.');
-        return;
-      }
+      if (!nome || isNaN(punti) || !data) return alert("Compila tutti i campi");
 
-      fetch(webAppUrl, {
+      const payload = { nome, punti, vittoria, data };
+
+      const res = await fetch(webAppUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome, punti, vittoria, data })
-      })
-      .then(res => res.json())
-      .then(result => {
-        if (result.result === 'success') {
-          alert('Risultato inviato!');
-          this.reset();
-          loadData();
-        } else {
-          alert('Errore: ' + (result.message || 'invio fallito'));
-        }
-      })
-      .catch(err => {
-        console.error('Errore invio:', err);
-        alert('Errore di rete');
+        body: JSON.stringify(payload)
       });
+
+      const result = await res.json();
+      if (result.result === 'success') {
+        alert("Dati salvati!");
+        this.reset();
+        loadData();
+      } else {
+        alert("Errore: " + result.message);
+      }
     });
 
-    // Carica dati all'avvio
+    function loadData() {
+      fetch(sheetReadUrl)
+        .then(res => res.json())
+        .then(data => {
+          const rows = data.values;
+          const header = rows[0];
+          const dataRows = rows.slice(1);
+
+          // Ordina per punti
+          dataRows.sort((a, b) => (parseInt(b[1]) || 0) - (parseInt(a[1]) || 0));
+
+          // Tabella classifica
+          let classificaHTML = '<h4>Classifica Dettagliata</h4><table class="table table-bordered"><thead><tr>';
+          header.forEach(h => classificaHTML += `<th>${h}</th>`);
+          classificaHTML += '</tr></thead><tbody>';
+          dataRows.forEach(row => {
+            classificaHTML += '<tr>' + row.map(c => `<td>${c}</td>`).join('') + '</tr>';
+          });
+          classificaHTML += '</tbody></table>';
+          document.getElementById('classifica').innerHTML = classificaHTML;
+
+          // Riepilogo
+          const totali = {};
+          dataRows.forEach(r => {
+            const nome = r[0];
+            const p = parseInt(r[1]) || 0;
+            const v = parseInt(r[2]) || 0;
+            if (!totali[nome]) totali[nome] = { punti: 0, vittorie: 0, partite: 0 };
+            totali[nome].punti += p;
+            totali[nome].vittorie += v;
+            totali[nome].partite++;
+          });
+
+          let riepilogo = '<h4>Totali per Giocatore</h4><table class="table table-bordered"><thead><tr><th>Giocatore</th><th>Punti</th><th>Vittorie</th><th>Partite</th></tr></thead><tbody>';
+          for (const nome in totali) {
+            const r = totali[nome];
+            riepilogo += `<tr><td>${nome}</td><td>${r.punti}</td><td>${r.vittorie}</td><td>${r.partite}</td></tr>`;
+          }
+          riepilogo += '</tbody></table>';
+          document.getElementById('totali').innerHTML = riepilogo;
+        })
+        .catch(err => console.error('Errore:', err));
+    }
+
     loadData();
   </script>
 </body>
