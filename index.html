@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
@@ -6,7 +6,6 @@
   <title>Classifica Torneo di Katan</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
   <style>
-    /* Aggiunte di stile personalizzate */
     h2, h4 {
       margin-top: 30px;
       margin-bottom: 15px;
@@ -61,10 +60,10 @@
     const apiKey = 'AIzaSyATTZnPzPLGBi0kKbj0ZBCAWb-0n5l1pRo';
     const spreadsheetId = '1G_nHw8XrB4N0yAA5QoOLSLuIzpmQ_isuaVA-7GrPLMU';
     const range = 'TorneoKatan!A1:D150';
-
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?key=${apiKey}`;
 
-    // Funzione per caricare e mostrare dati
+    const webAppUrl = 'https://script.google.com/macros/s/AKfycbzOMWW0JBhrr5FeRbOK6zWlzA70gB7OURrBoxEj5To2pXaDki0Jqy7qrcvc1gj709OtFg/exec'; // <--- 🔁 Sostituisci con il tuo URL di Google Apps Script Web App
+
     function loadData() {
       fetch(url)
         .then(response => response.json())
@@ -74,14 +73,8 @@
             const header = rows[0];
             let dataRows = rows.slice(1);
 
-            // Ordina per punti (colonna 2, indice 1), decrescente
-            dataRows.sort((a, b) => {
-              const puntiA = parseInt(a[1]) || 0;
-              const puntiB = parseInt(b[1]) || 0;
-              return puntiB - puntiA;
-            });
+            dataRows.sort((a, b) => (parseInt(b[1]) || 0) - (parseInt(a[1]) || 0));
 
-            // Costruisci tabella classifica dettagliata
             let htmlClassifica = '<table class="table table-striped table-bordered">';
             htmlClassifica += '<thead><tr>';
             header.forEach(cell => {
@@ -100,7 +93,6 @@
 
             document.getElementById('classifica').innerHTML = `<h4>Classifica Dettagliata</h4>${htmlClassifica}`;
 
-            // Calcolo totali per giocatore
             const risultati = {};
             dataRows.forEach(row => {
               const nome = row[0];
@@ -115,7 +107,6 @@
               risultati[nome].partite++;
             });
 
-            // Costruisci tabella totali
             let htmlTotali = '<table class="table table-striped table-bordered">';
             htmlTotali += '<thead><tr><th>Giocatore</th><th>Punti Totali</th><th>Vittorie Totali</th><th>Partite Giocate</th></tr></thead><tbody>';
 
@@ -124,9 +115,7 @@
             }
 
             htmlTotali += '</tbody></table>';
-
             document.getElementById('totali').innerHTML = `<h4>Totali per Giocatore</h4>${htmlTotali}`;
-
           } else {
             document.getElementById('classifica').innerHTML = '<p>Nessun dato trovato</p>';
             document.getElementById('totali').innerHTML = '';
@@ -139,10 +128,8 @@
         });
     }
 
-    // Carica dati all'apertura pagina
     loadData();
 
-    // Gestione invio form (aggiungi risultato)
     document.getElementById('resultForm').addEventListener('submit', function (e) {
       e.preventDefault();
 
@@ -156,15 +143,25 @@
         return;
       }
 
-      // Qui devi implementare la logica per inviare i dati al Google Sheet
-      // Ad esempio tramite fetch POST verso un tuo endpoint o Apps Script web app
-      // Per ora facciamo un alert simulato
-
-      alert(`Invio risultato:\nGiocatore: ${nome}\nPunti: ${punti}\nVittoria: ${vittoria}\nData: ${dataPartita}`);
-
-      // Dopo invio reale, pulisci form e ricarica dati
-      this.reset();
-      loadData();
+      fetch(webAppUrl, {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, punti, vittoria, data: dataPartita })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.result === 'success') {
+          alert('Risultato inserito con successo!');
+          document.getElementById('resultForm').reset();
+          loadData();
+        } else {
+          alert('Errore durante l\'invio: ' + data.message);
+        }
+      })
+      .catch(err => {
+        alert('Errore di rete: ' + err.message);
+      });
     });
   </script>
 </body>
