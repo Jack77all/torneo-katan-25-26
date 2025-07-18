@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -26,7 +27,7 @@
   </div>
 
   <script>
-    const webAppUrl = 'https://script.google.com/macros/s/AKfycbxJrSniGgbnCi-_-pIC5hrAx41ncm3qw9Z98MXBVW-1aQbNLtfriHBIpLkwSaqHDdhpDA/exec'; 
+    const webAppUrl = 'https://script.google.com/macros/s/AKfycbwiAhxR_qnQrkedPRzubkxo4SHAW6l0ZJqazIlM48LXlATZfI-UnJxa5srfthMrhmpFkA/exec'; // <-- sostituisci!
 
     const sheetReadUrl = 'https://sheets.googleapis.com/v4/spreadsheets/1G_nHw8XrB4N0yAA5QoOLSLuIzpmQ_isuaVA-7GrPLMU/values/TorneoKatan!A1:D150?key=AIzaSyATTZnPzPLGBi0kKbj0ZBCAWb-0n5l1pRo';
 
@@ -66,10 +67,8 @@
           const header = rows[0];
           const dataRows = rows.slice(1);
 
-          // Ordina per punti
           dataRows.sort((a, b) => (parseInt(b[1]) || 0) - (parseInt(a[1]) || 0));
 
-          // Tabella classifica
           let classificaHTML = '<h4>Classifica Dettagliata</h4><table class="table table-bordered"><thead><tr>';
           header.forEach(h => classificaHTML += `<th>${h}</th>`);
           classificaHTML += '</tr></thead><tbody>';
@@ -79,7 +78,6 @@
           classificaHTML += '</tbody></table>';
           document.getElementById('classifica').innerHTML = classificaHTML;
 
-          // Riepilogo
           const totali = {};
           dataRows.forEach(r => {
             const nome = r[0];
