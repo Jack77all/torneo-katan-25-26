@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
@@ -32,137 +32,119 @@
         <input type="date" class="form-control" id="matchDate" required />
       </div>
       <div class="form-check mb-3">
-        <input class="form-check-input" type="checkbox" value="" id="victory" />
-        <label class="form-check-label" for="victory">
-          Vittoria
-        </label>
+        <input class="form-check-input" type="checkbox" id="victory" />
+        <label class="form-check-label" for="victory">Vittoria</label>
       </div>
       <button type="submit" class="btn btn-primary w-100">Inserisci Risultato</button>
     </form>
 
     <hr />
 
-    <!-- Classifica dettagliata (tutti i record) -->
+    <!-- Classifica dettagliata -->
     <div id="classifica">
       <h4>Classifica Dettagliata</h4>
       <p>Caricamento dati...</p>
     </div>
 
-    <!-- Totali per giocatore -->
+    <!-- Totali -->
     <div id="totali">
       <h4>Totali per Giocatore</h4>
       <p>Caricamento dati...</p>
     </div>
-
   </div>
 
   <script>
-    const apiKey = 'AIzaSyATTZnPzPLGBi0kKbj0ZBCAWb-0n5l1pRo';
-    const spreadsheetId = '1G_nHw8XrB4N0yAA5QoOLSLuIzpmQ_isuaVA-7GrPLMU';
-    const range = 'TorneoKatan!A1:D150';
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?key=${apiKey}`;
+    const webAppUrl = 'https://script.google.com/macros/s/AKfycbzOMWW0JBhrr5FeRbOK6zWlzA70gB7OURrBoxEj5To2pXaDki0Jqy7qrcvc1gj709OtFg/exec'; // <--- SOSTITUISCI QUI
 
-    const webAppUrl = 'https://script.google.com/macros/s/AKfycbzOMWW0JBhrr5FeRbOK6zWlzA70gB7OURrBoxEj5To2pXaDki0Jqy7qrcvc1gj709OtFg/exec'; // <--- 🔁 Sostituisci con il tuo URL di Google Apps Script Web App
+    const sheetReadUrl = `https://sheets.googleapis.com/v4/spreadsheets/1G_nHw8XrB4N0yAA5QoOLSLuIzpmQ_isuaVA-7GrPLMU/values/TorneoKatan!A1:D150?key=AIzaSyATTZnPzPLGBi0kKbj0ZBCAWb-0n5l1pRo`;
 
     function loadData() {
-      fetch(url)
+      fetch(sheetReadUrl)
         .then(response => response.json())
         .then(data => {
           const rows = data.values;
           if (rows && rows.length > 1) {
             const header = rows[0];
-            let dataRows = rows.slice(1);
+            const dataRows = rows.slice(1);
 
+            // Ordina per punti (colonna 2)
             dataRows.sort((a, b) => (parseInt(b[1]) || 0) - (parseInt(a[1]) || 0));
 
-            let htmlClassifica = '<table class="table table-striped table-bordered">';
-            htmlClassifica += '<thead><tr>';
-            header.forEach(cell => {
-              htmlClassifica += `<th>${cell}</th>`;
-            });
+            let htmlClassifica = '<table class="table table-striped table-bordered"><thead><tr>';
+            header.forEach(cell => htmlClassifica += `<th>${cell}</th>`);
             htmlClassifica += '</tr></thead><tbody>';
-
             dataRows.forEach(row => {
               htmlClassifica += '<tr>';
-              row.forEach(cell => {
-                htmlClassifica += `<td>${cell}</td>`;
-              });
+              row.forEach(cell => htmlClassifica += `<td>${cell}</td>`);
               htmlClassifica += '</tr>';
             });
             htmlClassifica += '</tbody></table>';
+            document.getElementById('classifica').innerHTML = '<h4>Classifica Dettagliata</h4>' + htmlClassifica;
 
-            document.getElementById('classifica').innerHTML = `<h4>Classifica Dettagliata</h4>${htmlClassifica}`;
-
+            // Totali per giocatore
             const risultati = {};
             dataRows.forEach(row => {
               const nome = row[0];
               const punti = parseInt(row[1]) || 0;
               const vittoria = parseInt(row[2]) || 0;
-
-              if (!risultati[nome]) {
-                risultati[nome] = { punti: 0, vittorie: 0, partite: 0 };
-              }
+              if (!risultati[nome]) risultati[nome] = { punti: 0, vittorie: 0, partite: 0 };
               risultati[nome].punti += punti;
               risultati[nome].vittorie += vittoria;
               risultati[nome].partite++;
             });
 
-            let htmlTotali = '<table class="table table-striped table-bordered">';
-            htmlTotali += '<thead><tr><th>Giocatore</th><th>Punti Totali</th><th>Vittorie Totali</th><th>Partite Giocate</th></tr></thead><tbody>';
-
+            let htmlTotali = '<table class="table table-striped table-bordered"><thead><tr><th>Giocatore</th><th>Punti Totali</th><th>Vittorie</th><th>Partite</th></tr></thead><tbody>';
             for (const nome in risultati) {
-              htmlTotali += `<tr><td>${nome}</td><td>${risultati[nome].punti}</td><td>${risultati[nome].vittorie}</td><td>${risultati[nome].partite}</td></tr>`;
+              const r = risultati[nome];
+              htmlTotali += `<tr><td>${nome}</td><td>${r.punti}</td><td>${r.vittorie}</td><td>${r.partite}</td></tr>`;
             }
-
             htmlTotali += '</tbody></table>';
-            document.getElementById('totali').innerHTML = `<h4>Totali per Giocatore</h4>${htmlTotali}`;
-          } else {
-            document.getElementById('classifica').innerHTML = '<p>Nessun dato trovato</p>';
-            document.getElementById('totali').innerHTML = '';
+            document.getElementById('totali').innerHTML = '<h4>Totali per Giocatore</h4>' + htmlTotali;
           }
         })
         .catch(err => {
-          console.error('Errore nel recupero dati:', err);
-          document.getElementById('classifica').innerHTML = '<p>Errore nel caricamento dati</p>';
+          console.error('Errore caricamento:', err);
+          document.getElementById('classifica').innerHTML = 'Errore nel caricamento dati';
           document.getElementById('totali').innerHTML = '';
         });
     }
 
-    loadData();
-
+    // Invia dati al Google Sheet
     document.getElementById('resultForm').addEventListener('submit', function (e) {
       e.preventDefault();
-
       const nome = document.getElementById('playerName').value.trim();
       const punti = parseInt(document.getElementById('points').value);
-      const dataPartita = document.getElementById('matchDate').value;
+      const data = document.getElementById('matchDate').value;
       const vittoria = document.getElementById('victory').checked ? 1 : 0;
 
-      if (!nome || isNaN(punti) || !dataPartita) {
+      if (!nome || isNaN(punti) || !data) {
         alert('Compila tutti i campi correttamente.');
         return;
       }
 
       fetch(webAppUrl, {
         method: 'POST',
-        mode: 'cors',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome, punti, vittoria, data: dataPartita })
+        body: JSON.stringify({ nome, punti, vittoria, data })
       })
-      .then(response => response.json())
-      .then(data => {
-        if (data.result === 'success') {
-          alert('Risultato inserito con successo!');
-          document.getElementById('resultForm').reset();
+      .then(res => res.json())
+      .then(result => {
+        if (result.result === 'success') {
+          alert('Risultato inviato!');
+          this.reset();
           loadData();
         } else {
-          alert('Errore durante l\'invio: ' + data.message);
+          alert('Errore: ' + (result.message || 'invio fallito'));
         }
       })
       .catch(err => {
-        alert('Errore di rete: ' + err.message);
+        console.error('Errore invio:', err);
+        alert('Errore di rete');
       });
     });
+
+    // Carica dati all'avvio
+    loadData();
   </script>
 </body>
 </html>
